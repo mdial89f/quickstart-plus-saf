@@ -5,11 +5,6 @@ pipeline {
     quietPeriod(0)
     ansiColor('xterm')
   }
-  parameters {
-    stringParam(defaultValue: false, name: 'ENVIRONMENT', description: 'The environment to scan.  ex. master')
-    stringParam(defaultValue: true, name: 'VERSION', description: 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesn't need to be.  This is a very important degree of freedom. ex. master   or  1.1.1 ')
-    stringParam(defaultValue: true, name: 'VPC_NAME', description: 'The vpc name into which the SAF infrastructure should be built.  This should likely be the same VPC that holds your target environment.')
-  }
   environment {
     BUILD_TAG = resolveBuildTag()
   }

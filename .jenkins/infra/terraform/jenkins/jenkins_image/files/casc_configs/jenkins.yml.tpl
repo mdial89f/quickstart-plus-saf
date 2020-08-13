@@ -183,6 +183,11 @@ jobs:
       }
   - script: >
       pipelineJob('saf') {
+        parameters {
+          stringParam('ENVIRONMENT', '', 'The environment to scan.  ex. master')
+          stringParam('VERSION', '', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesn't need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+          stringParam('VPC_NAME', '', 'The vpc name into which the SAF infrastructure should be built.  This should likely be the same VPC that holds your target environment.')
+        }
         definition {
           cpsScm {
             scm {
