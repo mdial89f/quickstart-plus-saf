@@ -12,7 +12,7 @@ pipeline {
     stage("Prep Agent") {
       steps {
         script {
-          currentBuild.displayName = env.BUILD_TAG
+          currentBuild.displayName = env.ENVIRONMENT
 
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
 
