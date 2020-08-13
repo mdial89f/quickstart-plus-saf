@@ -22,20 +22,13 @@ pipeline {
         }
       }
     }
-    stage("Build/Push Images") {
+    stage("Run Inspec Scans") {
       steps {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           lock('docker_socket') {
             jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_NAME])
           }
-        }
-      }
-    }
-    stage("Build SAF Infrastructure") {
-      steps {
-        script {
-          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('saf/aws') {
             jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.ENVIRONMENT, "apply",
               [
@@ -43,19 +36,14 @@ pipeline {
                 "vpc_name": env.VPC_NAME
               ]
             )
-            env.INSPEC_POSTGRES_RDS_CLUSTER = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_cluster")
-            env.INSPEC_POSTGRES_RDS_TASK_DEFINITION_ARN = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_task_definition_arn")
-            env.INSPEC_POSTGRES_RDS_SUBNETS = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_subnets")
-            env.INSPEC_POSTGRES_RDS_SECURITY_GROUP = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_security_group")
           }
-        }
-      }
-    }
-    stage("Run Scans") {
-      steps {
-        script {
-          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
-          jenkinsUtils.runInspecScan("inspec_postgres_rds", env.INSPEC_POSTGRES_RDS_TASK_DEFINITION_ARN, env.INSPEC_POSTGRES_RDS_CLUSTER, env.INSPEC_POSTGRES_RDS_SUBNETS, env.INSPEC_POSTGRES_RDS_SECURITY_GROUP)
+          jenkinsUtils.runInspecScan(
+            "inspec_postgres_rds",
+            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_task_definition_arn"),
+            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_cluster"),
+            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_subnets"),
+            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_security_group")
+          )
         }
       }
       post {
@@ -66,7 +54,6 @@ pipeline {
         }
       }
     }
-  }
 }
 
 def resolveBuildTag() {
