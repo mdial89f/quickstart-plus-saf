@@ -225,27 +225,27 @@ jobs:
           }
         }
       }
-      - script: >
-          pipelineJob('SAF/saf-prod') {
-            parameters {
-              stringParam('VERSION', 'prod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
-            }
-            environmentVariables(VPC_NAME: 'dev', ENVIRONMENT: 'prod')
-            definition {
-              cpsScm {
-                scm {
-                  git{
-                    branch('\$VERSION')
-                    remote {
-                      url('${git_https_clone_url}')
-                      credentials('GIT_CREDENTIAL')
-                    }
-                  }
-                  scriptPath('.jenkins/Jenkinsfile.saf')
+  - script: >
+      pipelineJob('SAF/saf-prod') {
+        parameters {
+          stringParam('VERSION', 'prod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+        }
+        environmentVariables(VPC_NAME: 'dev', ENVIRONMENT: 'prod')
+        definition {
+          cpsScm {
+            scm {
+              git{
+                branch('\$VERSION')
+                remote {
+                  url('${git_https_clone_url}')
+                  credentials('GIT_CREDENTIAL')
                 }
               }
+              scriptPath('.jenkins/Jenkinsfile.saf')
             }
           }
+        }
+      }
 unclassified:
   gitscm:
     globalConfigName: jenkins
