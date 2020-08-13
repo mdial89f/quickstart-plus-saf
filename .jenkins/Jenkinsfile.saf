@@ -22,6 +22,26 @@ pipeline {
         }
       }
     }
+    stage("Scan Images") {
+      steps {
+        script {
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+          jenkinsUtils.triggerEcrScan("postgres_deployer", env.BUILD_TAG)
+          jenkinsUtils.fetchEcrScanResult("postgres_deployer", env.BUILD_TAG)
+          jenkinsUtils.triggerEcrScan("django", env.BUILD_TAG)
+          jenkinsUtils.fetchEcrScanResult("django", env.BUILD_TAG)
+          jenkinsUtils.triggerEcrScan("react", env.BUILD_TAG)
+          jenkinsUtils.fetchEcrScanResult("react", env.BUILD_TAG)
+        }
+      }
+      post {
+        always {
+          script {
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'ecr_scan_*.json'
+          }
+        }
+      }
+    }
     stage("Run Inspec Scans") {
       steps {
         script {

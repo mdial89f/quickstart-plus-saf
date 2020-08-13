@@ -13,6 +13,15 @@ void buildAndPushImageToEcr(String buildDir, String repositoryName, List tags) {
   }
 }
 
+void triggerEcrScan(String repositoryName, String tag) {
+  loginToEcr()
+  sh """
+    # There is a 1 scan/image/day limit.  We will start a scan, but ignore failures, as we may have already requested a scan.
+    # If a scan is already complete, we're happy.  We will just fetch those results.  So ignoring failure is deemed OK.
+    aws ecr start-image-scan --repository-name $repositoryName --image-id imageTag=$tag | true
+  """
+}
+
 void fetchEcrScanResult(String repositoryName, String tag) {
   loginToEcr()
   sh """
