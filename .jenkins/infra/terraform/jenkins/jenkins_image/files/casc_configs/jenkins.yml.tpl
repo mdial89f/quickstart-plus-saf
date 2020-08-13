@@ -118,7 +118,7 @@ jobs:
       }
   - script: >
       pipelineJob('master') {
-        environmentVariables(DOWNSTREAM_JOB: 'preprod', VPC_NAME: 'dev')
+        environmentVariables(DOWNSTREAM_JOB: 'preprod', VPC_NAME: 'dev', SAF_SCAN: 'true')
         definition {
           cpsScm {
             scm {
