@@ -31,3 +31,14 @@ resource "aws_ecr_repository" "postgres_deployer" {
   }
 }
 ####################################################################################################
+
+####################################################################################################
+# Creates an ECR image repository to hold the inspec_postgres_rds image
+####################################################################################################
+resource "aws_ecr_repository" "inspec_postgres_rds" {
+  name = "inspec_postgres_rds"
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+####################################################################################################
