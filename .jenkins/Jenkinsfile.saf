@@ -26,7 +26,9 @@ pipeline {
       steps {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
-          jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_NAME])
+          lock('docker_socket') {
+            jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_NAME])
+          }
         }
       }
     }
