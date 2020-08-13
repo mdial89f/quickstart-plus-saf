@@ -22,10 +22,34 @@ pipeline {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
 
           jenkinsUtils.installAwsCli()
+          jenkinsUtils.installEcsCli()
           jenkinsUtils.installTerraform("0.12.24")
 
           env.DEPLOY_DATA = jenkinsUtils.pathHasChanges("data") || jenkinsUtils.pathHasChanges(".jenkins")
           env.DEPLOY_FRONTEND = jenkinsUtils.pathHasChanges("frontend") || env.DEPLOY_DATA
+        }
+      }
+    }
+    stage("Scan Images") {
+      when {
+        expression { env.SKIP_SCANS != "true" }
+      }
+      steps {
+        script {
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+          jenkinsUtils.triggerEcrScan("postgres_deployer", env.VERSION)
+          jenkinsUtils.triggerEcrScan("django", env.VERSION)
+          jenkinsUtils.triggerEcrScan("react", env.VERSION)
+          jenkinsUtils.fetchEcrScanResult("postgres_deployer", env.VERSION)
+          jenkinsUtils.fetchEcrScanResult("django", env.VERSION)
+          jenkinsUtils.fetchEcrScanResult("react", env.VERSION)
+        }
+      }
+      post {
+        always {
+          script {
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'ecr_scan_*.json'
+          }
         }
       }
     }
@@ -94,6 +118,41 @@ pipeline {
               set -e
               docker run --rm -e APPLICATION_ENDPOINT=$APPLICATION_ENDPOINT -v $(pwd)/testcafe:/tests testcafe/testcafe chromium /tests/**/*.js
             '''
+          }
+        }
+      }
+    }
+    stage("Run Inspec Scans") {
+      when {
+        expression { env.SKIP_SCANS != "true" }
+      }
+      steps {
+        script {
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+          lock('docker_socket') {
+            jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_BASE_NAME])
+          }
+          dir('saf/aws') {
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "apply",
+              [
+                "application_version": env.BUILD_TAG,
+                "vpc_name": env.VPC_NAME
+              ]
+            )
+            jenkinsUtils.runInspecScan(
+              "postgres_rds",
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "inspec_postgres_rds_task_definition_arn"),
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "inspec_postgres_rds_cluster"),
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "inspec_postgres_rds_subnets"),
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "inspec_postgres_rds_security_group")
+            )
+          }
+        }
+      }
+      post {
+        always {
+          script {
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf/aws/inspec_scan_result_*'
           }
         }
       }
