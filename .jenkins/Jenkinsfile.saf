@@ -37,7 +37,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('saf/aws') {
-            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_NAME, "apply",
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.ENVIRONMENT, "apply",
               [
                 "application_version": env.BUILD_TAG,
                 "vpc_name": env.VPC_NAME
