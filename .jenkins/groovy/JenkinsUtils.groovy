@@ -129,17 +129,9 @@ void runInspecScan(String name, String taskDef, String cluster, String subnets, 
   sh """
     PATH=~/.local/bin:$PATH
     taskArn=`aws ecs run-task --task-definition ${taskDef} --cluster ${cluster} --count 1 --network-configuration "awsvpcConfiguration={subnets=[${subnets}],securityGroups=[${securityGroup}],assignPublicIp=DISABLED}" --capacity-provider-strategy "capacityProvider=FARGATE" --output text --query 'tasks[0].taskArn'`
-    taskId=`echo $taskArn | sed 's|.*/||'`
-    aws ecs wait tasks-stopped --cluster ${cluster} --tasks "$taskArn"
-    ecs-cli logs --task-id $taskId --cluster ${cluster} | sed -n '/BEGIN_JSON_RESULTS/,/END_JSON_RESULTS/p' | sed 's/BEGIN_JSON_RESULTS//' | sed 's/END_JSON_RESULTS//'  | tr -d '\r\n' | tr -d '\n' | python -m json.tool > saf_results_${name}.json
-  """
-}
-
-void asdf(String one, String two){
-  sh """
-    PATH=~/.local/bin:$PATH
-    taskArn="27234727247274724724/1818818181818"
     taskId=`echo \$taskArn | sed 's|.*/||'`
+    aws ecs wait tasks-stopped --cluster ${cluster} --tasks "\$taskArn"
+    ecs-cli logs --task-id \$taskId --cluster ${cluster} | sed -n '/BEGIN_JSON_RESULTS/,/END_JSON_RESULTS/p' | sed 's/BEGIN_JSON_RESULTS//' | sed 's/END_JSON_RESULTS//'  | tr -d '\r\n' | tr -d '\n' | python -m json.tool > saf_results_${name}.json
   """
 }
 

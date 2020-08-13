@@ -1,5 +1,5 @@
 pipeline {
-  agent { label "master" }
+  agent { label "ec2-jnlp-slave" }
   options {
     disableConcurrentBuilds()
     quietPeriod(0)
@@ -9,15 +9,6 @@ pipeline {
     BUILD_TAG = resolveBuildTag()
   }
   stages {
-    stage("asdf") {
-      steps {
-        script {
-          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
-          jenkinsUtils.asdf("one", "two")
-          jenkinsUtils.breakkkk()
-        }
-      }
-    }
     stage("Prep Agent") {
       steps {
         script {
