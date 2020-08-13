@@ -145,6 +145,19 @@ pipeline {
               echo err.getMessage()
             }
           }
+          if (env.SAF_SCAN == "true") {
+            try {
+              build job: "saf",
+                parameters: [
+                  string(name: 'ENVIRONMENT', value: "${BUILD_TAG}"),
+                  string(name: 'VERSION', value: "${JOB_NAME}"),
+                  string(name: 'VPC_NAME', value: "${VPC_NAME}")
+                ],
+                wait: false
+            } catch (err) {
+              echo err.getMessage()
+            }
+          }
         }
       }
     }
