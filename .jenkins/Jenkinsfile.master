@@ -149,8 +149,8 @@ pipeline {
             try {
               build job: "saf",
                 parameters: [
-                  string(name: 'ENVIRONMENT', value: "${BUILD_TAG}"),
-                  string(name: 'VERSION', value: "${JOB_NAME}"),
+                  string(name: 'ENVIRONMENT', value: "${JOB_NAME}"),
+                  string(name: 'VERSION', value: "${BUILD_TAG}"),
                   string(name: 'VPC_NAME', value: "${VPC_NAME}")
                 ],
                 wait: false
