@@ -30,9 +30,9 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           lock('docker_socket') {
-            jenkinsUtils.buildAndPushImageToEcr("data/postgres_deployer", "postgres_deployer", [env.BUILD_TAG, env.JOB_NAME])
-            jenkinsUtils.buildAndPushImageToEcr("frontend/django", "django", [env.BUILD_TAG, env.JOB_NAME])
-            jenkinsUtils.buildAndPushImageToEcr("frontend/react", "react", [env.BUILD_TAG, env.JOB_NAME])
+            jenkinsUtils.buildAndPushImageToEcr("data/postgres_deployer", "postgres_deployer", [env.BUILD_TAG, env.JOB_BASE_NAME])
+            jenkinsUtils.buildAndPushImageToEcr("frontend/django", "django", [env.BUILD_TAG, env.JOB_BASE_NAME])
+            jenkinsUtils.buildAndPushImageToEcr("frontend/react", "react", [env.BUILD_TAG, env.JOB_BASE_NAME])
           }
         }
       }
@@ -62,7 +62,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('data/aws') {
-            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_NAME, "apply",
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "apply",
               [
                 "application_version": env.BUILD_TAG,
                 "vpc_name": env.VPC_NAME
@@ -87,7 +87,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('frontend/aws') {
-            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_NAME, "apply",
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "apply",
               [
                 "application_version": env.BUILD_TAG,
                 "vpc_name": env.VPC_NAME
@@ -109,7 +109,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('frontend/aws') {
-            env.APPLICATION_ENDPOINT = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_NAME, "application_endpoint")
+            env.APPLICATION_ENDPOINT = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "application_endpoint")
           }
           dir('tests') {
             sh '''
@@ -149,7 +149,7 @@ pipeline {
             try {
               build job: "saf",
                 parameters: [
-                  string(name: 'ENVIRONMENT', value: "${JOB_NAME}"),
+                  string(name: 'ENVIRONMENT', value: "${JOB_BASE_NAME}"),
                   string(name: 'VERSION', value: "${BUILD_TAG}"),
                   string(name: 'VPC_NAME', value: "${VPC_NAME}")
                 ],

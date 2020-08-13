@@ -37,7 +37,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('data/aws') {
-            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_NAME, "apply",
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "apply",
               [
                 "application_version": env.VERSION,
                 "vpc_name": env.VPC_NAME
@@ -62,7 +62,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('frontend/aws') {
-            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_NAME, "apply",
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "apply",
               [
                 "application_version": env.VERSION,
                 "vpc_name": env.VPC_NAME
@@ -87,7 +87,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           dir('frontend/aws') {
-            env.APPLICATION_ENDPOINT = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_NAME, "application_endpoint")
+            env.APPLICATION_ENDPOINT = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_BASE_NAME, "application_endpoint")
           }
           dir('tests') {
             sh '''
@@ -108,8 +108,8 @@ pipeline {
             remote_url=`git config remote.origin.url | sed -e 's|^https://||'`
             git config user.name 'Jenkins'
             git config user.email 'jenkins@mycompany.com'
-            git tag $JOB_NAME -f
-            git push https://$GIT_CREDENTIAL@$remote_url refs/tags/$JOB_NAME -f
+            git tag $JOB_BASE_NAME -f
+            git push https://$GIT_CREDENTIAL@$remote_url refs/tags/$JOB_BASE_NAME -f
           '''
           if (env.DOWNSTREAM_JOB) {
             try {
@@ -126,7 +126,7 @@ pipeline {
             try {
               build job: "saf",
                 parameters: [
-                  string(name: 'ENVIRONMENT', value: "${JOB_NAME}"),
+                  string(name: 'ENVIRONMENT', value: "${JOB_BASE_NAME}"),
                   string(name: 'VERSION', value: "${VERSION}"),
                   string(name: 'VPC_NAME', value: "${VPC_NAME}")
                 ],

@@ -27,7 +27,7 @@ pipeline {
         script {
           def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
           lock('docker_socket') {
-            jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_NAME])
+            jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_BASE_NAME])
           }
           dir('saf/aws') {
             jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.ENVIRONMENT, "apply",
