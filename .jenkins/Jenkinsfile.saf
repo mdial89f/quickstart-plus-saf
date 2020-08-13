@@ -54,24 +54,14 @@ pipeline {
     stage("Run Scans") {
       steps {
         script {
-          dir('saf') {
-            sh '''
-              PATH=~/.local/bin:$PATH
-              taskArn=`aws ecs run-task --task-definition $INSPEC_POSTGRES_RDS_TASK_DEFINITION_ARN --cluster $INSPEC_POSTGRES_RDS_CLUSTER --count 1 --network-configuration "awsvpcConfiguration={subnets=[$INSPEC_POSTGRES_RDS_SUBNETS],securityGroups=[$INSPEC_POSTGRES_RDS_SECURITY_GROUP],assignPublicIp=DISABLED}" --capacity-provider-strategy "capacityProvider=FARGATE" --output text --query 'tasks[0].taskArn'`
-              taskId=${taskArn##*/}
-              aws ecs wait tasks-stopped --cluster $INSPEC_POSTGRES_RDS_CLUSTER --tasks "$taskArn"
-              ecs-cli logs --task-id $taskId --cluster $INSPEC_POSTGRES_RDS_CLUSTER --filter-pattern "Profile Summary"
-              ecs-cli logs --task-id $taskId --cluster $INSPEC_POSTGRES_RDS_CLUSTER --filter-pattern "Test Summary"
-              ecs-cli logs --task-id $taskId --cluster $INSPEC_POSTGRES_RDS_CLUSTER | sed -n '/BEGIN_JSON_RESULTS/,/END_JSON_RESULTS/p' | sed 's/BEGIN_JSON_RESULTS//' | sed 's/END_JSON_RESULTS//'  | tr -d '\r\n' | tr -d '\n' | python -m json.tool > saf_results_inspec_postgres_rds.json
-
-            '''
-          }
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+          jenkinsUtils.runInspecScan("inspec_postgres_rds", env.INSPEC_POSTGRES_RDS_TASK_DEFINITION_ARN, env.INSPEC_POSTGRES_RDS_CLUSTER, env.INSPEC_POSTGRES_RDS_SUBNETS, env.INSPEC_POSTGRES_RDS_SECURITY_GROUP)
         }
       }
       post {
         always {
           script {
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf/saf_results*'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf_results*'
           }
         }
       }

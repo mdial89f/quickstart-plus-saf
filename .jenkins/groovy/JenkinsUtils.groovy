@@ -125,4 +125,16 @@ def terraformOutput(String stateBucket, String workspace, String outputVar) {
   sh(script: "~/.local/bin/terraform output ${outputVar}", returnStdout: true).trim()
 }
 
+void runInspecScan(String name, String taskDef, String cluster, String subnets, String securityGroup){
+  sh """
+    PATH=~/.local/bin:$PATH
+    taskArn=`aws ecs run-task --task-definition ${taskDef} --cluster ${cluster} --count 1 --network-configuration "awsvpcConfiguration={subnets=[${subnets}],securityGroups=[${securityGroup}],assignPublicIp=DISABLED}" --capacity-provider-strategy "capacityProvider=FARGATE" --output text --query 'tasks[0].taskArn'`
+    taskId=${taskArn##*/}
+    aws ecs wait tasks-stopped --cluster ${cluster} --tasks "$taskArn"
+    ecs-cli logs --task-id $taskId --cluster ${cluster} --filter-pattern "Profile Summary"
+    ecs-cli logs --task-id $taskId --cluster ${cluster} --filter-pattern "Test Summary"
+    ecs-cli logs --task-id $taskId --cluster ${cluster} | sed -n '/BEGIN_JSON_RESULTS/,/END_JSON_RESULTS/p' | sed 's/BEGIN_JSON_RESULTS//' | sed 's/END_JSON_RESULTS//'  | tr -d '\r\n' | tr -d '\n' | python -m json.tool > saf_results_${name}.json
+  """
+}
+
 return this
