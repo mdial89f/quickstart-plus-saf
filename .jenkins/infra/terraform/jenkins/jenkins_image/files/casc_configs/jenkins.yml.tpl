@@ -144,7 +144,7 @@ jobs:
         parameters {
           stringParam('VERSION', '', 'The version to deploy.  Versions are published by development pipelines and indicate which artifacts to deploy and what git tag to pull.  This should be a tag of format (number).(number).(number)  ex. 0.1.20')
         }
-        environmentVariables(DOWNSTREAM_JOB: 'prod', VPC_NAME: 'preprod')
+        environmentVariables(DOWNSTREAM_JOB: 'prod', VPC_NAME: 'preprod', SAF_SCAN: 'true')
         definition {
           cpsScm {
             scm {
@@ -165,7 +165,7 @@ jobs:
         parameters {
           stringParam('VERSION', '', 'The version to deploy.  Versions are published by development pipelines and indicate which artifacts to deploy and what git tag to pull.  This should be a tag of format (number).(number).(number)  ex. 0.1.20')
         }
-        environmentVariables(VPC_NAME: 'prod')
+        environmentVariables(VPC_NAME: 'prod', SAF_SCAN: 'true')
         definition {
           cpsScm {
             scm {
