@@ -182,12 +182,13 @@ jobs:
         }
       }
   - script: >
-      pipelineJob('saf') {
+      folder('SAF')
+  - script: >
+      pipelineJob('SAF/saf-master') {
         parameters {
-          stringParam('ENVIRONMENT', '', 'The environment to scan.  ex. master')
-          stringParam('VERSION', '', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
-          stringParam('VPC_NAME', '', 'The vpc name into which the SAF infrastructure should be built.  This should likely be the same VPC that holds your target environment.')
+          stringParam('VERSION', 'master', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
         }
+        environmentVariables(VPC_NAME: 'dev', ENVIRONMENT: 'master')
         definition {
           cpsScm {
             scm {
@@ -203,7 +204,48 @@ jobs:
           }
         }
       }
-
+  - script: >
+      pipelineJob('SAF/saf-preprod') {
+        parameters {
+          stringParam('VERSION', 'preprod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+        }
+        environmentVariables(VPC_NAME: 'preprod', ENVIRONMENT: 'preprod')
+        definition {
+          cpsScm {
+            scm {
+              git{
+                branch('\$VERSION')
+                remote {
+                  url('${git_https_clone_url}')
+                  credentials('GIT_CREDENTIAL')
+                }
+              }
+              scriptPath('.jenkins/Jenkinsfile.saf')
+            }
+          }
+        }
+      }
+      - script: >
+          pipelineJob('SAF/saf-prod') {
+            parameters {
+              stringParam('VERSION', 'prod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+            }
+            environmentVariables(VPC_NAME: 'dev', ENVIRONMENT: 'prod')
+            definition {
+              cpsScm {
+                scm {
+                  git{
+                    branch('\$VERSION')
+                    remote {
+                      url('${git_https_clone_url}')
+                      credentials('GIT_CREDENTIAL')
+                    }
+                  }
+                  scriptPath('.jenkins/Jenkinsfile.saf')
+                }
+              }
+            }
+          }
 unclassified:
   gitscm:
     globalConfigName: jenkins
