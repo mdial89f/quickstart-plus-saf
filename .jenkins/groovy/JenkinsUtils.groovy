@@ -139,7 +139,7 @@ void asdf(String one, String two){
   sh """
     PATH=~/.local/bin:$PATH
     taskArn="27234727247274724724/1818818181818"
-    taskId=`echo ${taskArn} | sed 's|.*/||'`
+    taskId=`echo \$taskArn | sed 's|.*/||'`
   """
 }
 
