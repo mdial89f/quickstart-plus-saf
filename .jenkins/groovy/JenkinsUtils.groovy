@@ -38,6 +38,13 @@ void installAwsCli() {
   '''
 }
 
+void installEcsCli() {
+  sh '''
+    curl -Lo ~/.local/bin/ecs-cli https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
+    chmod +x ~/.local/bin/ecs-cli
+  '''
+}
+
 void installTerraform(String version) {
   sh """
     curl -O https://releases.hashicorp.com/terraform/${version}/terraform_${version}_linux_amd64.zip
