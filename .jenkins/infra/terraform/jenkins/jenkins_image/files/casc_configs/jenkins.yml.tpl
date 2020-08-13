@@ -181,6 +181,23 @@ jobs:
           }
         }
       }
+  - script: >
+      pipelineJob('saf') {
+        definition {
+          cpsScm {
+            scm {
+              git{
+                branch('\$VERSION')
+                remote {
+                  url('${git_https_clone_url}')
+                  credentials('GIT_CREDENTIAL')
+                }
+              }
+              scriptPath('.jenkins/Jenkinsfile.saf')
+            }
+          }
+        }
+      }
 
 unclassified:
   gitscm:

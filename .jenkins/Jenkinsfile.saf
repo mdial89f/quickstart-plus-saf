@@ -1,0 +1,89 @@
+pipeline {
+  agent { label "ec2-jnlp-slave" }
+  options {
+    disableConcurrentBuilds()
+    quietPeriod(0)
+    ansiColor('xterm')
+  }
+  parameters {
+    stringParam(defaultValue: false, name: 'ENVIRONMENT', description: 'The environment to scan.  ex. master')
+    stringParam(defaultValue: true, name: 'VERSION', description: 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesn't need to be.  This is a very important degree of freedom. ex. master   or  1.1.1 ')
+    stringParam(defaultValue: true, name: 'VPC_NAME', description: 'The vpc name into which the SAF infrastructure should be built.  This should likely be the same VPC that holds your target environment.')
+  }
+  environment {
+    BUILD_TAG = resolveBuildTag()
+  }
+  stages {
+    stage("Prep Agent") {
+      steps {
+        script {
+          currentBuild.displayName = env.BUILD_TAG
+
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+
+          jenkinsUtils.installAwsCli()
+          jenkinsUtils.installEcsCli()
+          jenkinsUtils.installTerraform("0.12.24")
+        }
+      }
+    }
+    stage("Build/Push Images") {
+      steps {
+        script {
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+          jenkinsUtils.buildAndPushImageToEcr("saf/postgres_rds", "inspec_postgres_rds", [env.BUILD_TAG, env.JOB_NAME])
+        }
+      }
+    }
+    stage("Build SAF Infrastructure") {
+      steps {
+        script {
+          def jenkinsUtils = load ".jenkins/groovy/JenkinsUtils.groovy"
+          dir('saf/aws') {
+            jenkinsUtils.terraformApply(env.APPLICATION_BUCKET, env.JOB_NAME, "apply",
+              [
+                "application_version": env.BUILD_TAG,
+                "vpc_name": env.VPC_NAME
+              ]
+            )
+            env.INSPEC_POSTGRES_RDS_CLUSTER = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_NAME, "inspec_postgres_rds_cluster")
+            env.INSPEC_POSTGRES_RDS_TASK_DEFINITION_ARN = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_NAME, "inspec_postgres_rds_task_definition_arn")
+            env.INSPEC_POSTGRES_RDS_SUBNETS = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_NAME, "inspec_postgres_rds_subnets")
+            env.INSPEC_POSTGRES_RDS_SECURITY_GROUP = jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.JOB_NAME, "inspec_postgres_rds_security_group")
+          }
+        }
+      }
+    }
+    stage("Run Scans") {
+      steps {
+        script {
+          dir('saf') {
+            sh '''
+              PATH=~/.local/bin:$PATH
+              taskArn=`aws ecs run-task --task-definition $INSPEC_POSTGRES_RDS_TASK_DEFINITION_ARN --cluster $INSPEC_POSTGRES_RDS_CLUSTER --count 1 --network-configuration "awsvpcConfiguration={subnets=[$INSPEC_POSTGRES_RDS_SUBNETS],securityGroups=[$INSPEC_POSTGRES_RDS_SECURITY_GROUP],assignPublicIp=DISABLED}" --capacity-provider-strategy "capacityProvider=FARGATE" --output text --query 'tasks[0].taskArn'`
+              taskId=${taskArn##*/}
+              aws ecs wait tasks-stopped --cluster $INSPEC_POSTGRES_RDS_CLUSTER --tasks "$taskArn"
+              ecs-cli logs --task-id $taskId --cluster $INSPEC_POSTGRES_RDS_CLUSTER --filter-pattern "Profile Summary"
+              ecs-cli logs --task-id $taskId --cluster $INSPEC_POSTGRES_RDS_CLUSTER --filter-pattern "Test Summary"
+              ecs-cli logs --task-id $taskId --cluster $INSPEC_POSTGRES_RDS_CLUSTER | sed -n '/BEGIN_JSON_RESULTS/,/END_JSON_RESULTS/p' | sed 's/BEGIN_JSON_RESULTS//' | sed 's/END_JSON_RESULTS//'  | tr -d '\r\n' | tr -d '\n' | python -m json.tool > saf_results_inspec_postgres_rds.json
+
+            '''
+          }
+        }
+      }
+      post {
+        always {
+          script {
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf/saf_results*'
+          }
+        }
+      }
+    }
+}
+
+def resolveBuildTag() {
+  tag_prefix = sh(script: 'cat versionPrefix', returnStdout: true).trim()
+  commit_count = sh(script: 'git rev-list --count $GIT_COMMIT', returnStdout: true).trim()
+  build_tag = "${tag_prefix}.${commit_count}"
+  return build_tag
+}
