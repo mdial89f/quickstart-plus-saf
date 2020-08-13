@@ -37,7 +37,7 @@ pipeline {
               ]
             )
             jenkinsUtils.runInspecScan(
-              "inspec_postgres_rds",
+              "postgres_rds",
               jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_task_definition_arn"),
               jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_cluster"),
               jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_subnets"),
@@ -49,7 +49,7 @@ pipeline {
       post {
         always {
           script {
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf/aws/saf_results*'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf/aws/inspec_scan_result_*'
           }
         }
       }
