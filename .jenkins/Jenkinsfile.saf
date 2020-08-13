@@ -36,20 +36,20 @@ pipeline {
                 "vpc_name": env.VPC_NAME
               ]
             )
+            jenkinsUtils.runInspecScan(
+              "inspec_postgres_rds",
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_task_definition_arn"),
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_cluster"),
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_subnets"),
+              jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_security_group")
+            )
           }
-          jenkinsUtils.runInspecScan(
-            "inspec_postgres_rds",
-            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_task_definition_arn"),
-            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_cluster"),
-            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_subnets"),
-            jenkinsUtils.terraformOutput(env.APPLICATION_BUCKET, env.ENVIRONMENT, "inspec_postgres_rds_security_group")
-          )
         }
       }
       post {
         always {
           script {
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'saf_results*'
+            archiveArtifacts allowEmptyArchive: true, artifacts: '/**/saf_results*'
           }
         }
       }
