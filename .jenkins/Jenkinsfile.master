@@ -171,7 +171,9 @@ pipeline {
             git config user.name 'Jenkins'
             git config user.email 'jenkins@mycompany.com'
             git tag $BUILD_TAG -f
+            git tag master-tag -f
             git push -f https://$GIT_CREDENTIAL@$remote_url refs/tags/$BUILD_TAG
+            git push -f https://$GIT_CREDENTIAL@$remote_url refs/tags/master-tag
           '''
           if (env.DOWNSTREAM_JOB != "") {
             try {

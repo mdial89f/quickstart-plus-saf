@@ -186,11 +186,11 @@ jobs:
   - script: >
       pipelineJob('SAF/saf-master') {
         parameters {
-          stringParam('VERSION', 'master', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+          stringParam('VERSION', 'refs/tags/master-tag', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
         }
         environmentVariables(VPC_NAME: 'dev', ENVIRONMENT: 'master')
         triggers {
-          cron('0 2 * * *')
+          cron('H 2 * * *')
         }
         definition {
           cpsScm {
@@ -210,11 +210,11 @@ jobs:
   - script: >
       pipelineJob('SAF/saf-preprod') {
         parameters {
-          stringParam('VERSION', 'preprod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+          stringParam('VERSION', 'refs/tags/preprod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
         }
         environmentVariables(VPC_NAME: 'preprod', ENVIRONMENT: 'preprod')
         triggers {
-          cron('0 2 * * *')
+          cron('H 2 * * *')
         }
         definition {
           cpsScm {
@@ -234,11 +234,11 @@ jobs:
   - script: >
       pipelineJob('SAF/saf-prod') {
         parameters {
-          stringParam('VERSION', 'prod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
+          stringParam('VERSION', 'refs/tags/prod', 'This sets the source code for this build.  It can be any git ref.  It should very likely be the version currently deployed to your environment, but it doesnt need to be.  This is a very important degree of freedom. ex. master   or  1.1.1')
         }
-        environmentVariables(VPC_NAME: 'dev', ENVIRONMENT: 'prod')
+        environmentVariables(VPC_NAME: 'prod', ENVIRONMENT: 'prod')
         triggers {
-          cron('0 2 * * *')
+          cron('H 2 * * *')
         }
         definition {
           cpsScm {
